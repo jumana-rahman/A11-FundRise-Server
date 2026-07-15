@@ -93,6 +93,7 @@ export interface Payment {
   method: string;
   date: string;
   status: "completed" | "failed" | "pending";
+  stripeSessionId?: string;
 }
 
 export interface JWTPayload {
