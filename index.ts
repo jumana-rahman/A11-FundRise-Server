@@ -6,6 +6,7 @@ import { connectToDatabase } from "./lib/db";
 import { auth } from "./lib/auth";
 import { signJWT } from "./lib/jwt";
 import campaignRoutes from "./routes/campaigns";
+import contributionRoutes from "./routes/contributions";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,17 +19,26 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Better Auth handler — cast to any to bypass strict typing
+// Better Auth handler — build a Web API Request for better-auth
 app.all("/api/auth/*", async (req: any, res: any) => {
   try {
     const url = new URL(req.url!, `http://${req.headers.host}`);
-    const response = await auth.handler({
+
+    // Build a proper Web API Headers object from Express headers
+    const headers = new Headers();
+    for (const [key, value] of Object.entries(req.headers)) {
+      if (value !== undefined) {
+        headers.set(key, Array.isArray(value) ? value.join(", ") : String(value));
+      }
+    }
+
+    const webRequest = new Request(url.toString(), {
       method: req.method,
-      url: url.toString(),
-      headers: req.headers,
-      body: req.body,
-      query: Object.fromEntries(url.searchParams),
+      headers,
+      body: ["GET", "HEAD"].includes(req.method) ? undefined : JSON.stringify(req.body),
     });
+
+    const response = await auth.handler(webRequest);
 
     res.status(response.status);
     response.headers.forEach((value: string, key: string) => {
@@ -76,6 +86,7 @@ app.get("/api/health", (_: any, res: any) => {
 
 // Routes
 app.use("/api/campaigns", campaignRoutes);
+app.use("/api/contributions", contributionRoutes);
 
 async function start() {
   await connectToDatabase();
