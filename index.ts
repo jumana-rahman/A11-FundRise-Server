@@ -10,6 +10,8 @@ import contributionRoutes from "./routes/contributions";
 import userRoutes from "./routes/users";
 import withdrawalRoutes from "./routes/withdrawals";
 import paymentRoutes from "./routes/payments";
+import notificationRoutes from "./routes/notifications";
+import reportRoutes from "./routes/reports";
 import { grantRegistrationCredits } from "./controllers/userController";
 
 const app = express();
@@ -94,6 +96,8 @@ app.use("/api/contributions", contributionRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/reports", reportRoutes);
 
 // Grant registration credits (called by frontend after sign-up)
 app.post("/api/auth/register-credits", async (req: any, res: any) => {
