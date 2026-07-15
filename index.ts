@@ -8,6 +8,8 @@ import { signJWT } from "./lib/jwt";
 import campaignRoutes from "./routes/campaigns";
 import contributionRoutes from "./routes/contributions";
 import userRoutes from "./routes/users";
+import withdrawalRoutes from "./routes/withdrawals";
+import paymentRoutes from "./routes/payments";
 import { grantRegistrationCredits } from "./controllers/userController";
 
 const app = express();
@@ -90,6 +92,8 @@ app.get("/api/health", (_: any, res: any) => {
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/contributions", contributionRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // Grant registration credits (called by frontend after sign-up)
 app.post("/api/auth/register-credits", async (req: any, res: any) => {
