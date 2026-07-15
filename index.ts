@@ -25,6 +25,20 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Request logger middleware
+app.use((req: any, res: any, next: any) => {
+  const start = Date.now();
+  const originalEnd = res.end;
+  res.end = function (this: any, ...args: any[]) {
+    const duration = Date.now() - start;
+    if (req.url?.startsWith("/api")) {
+      console.log(`${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+    }
+    return originalEnd.apply(this, args);
+  };
+  next();
+});
+
 // Better Auth handler — build a Web API Request for better-auth
 app.all("/api/auth/*", async (req: any, res: any) => {
   try {
