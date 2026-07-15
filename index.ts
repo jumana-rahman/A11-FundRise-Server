@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { connectToDatabase } from "./lib/db";
+import { connectToDatabase, getDb } from "./lib/db";
 import { auth } from "./lib/auth";
 import { signJWT } from "./lib/jwt";
 import campaignRoutes from "./routes/campaigns";
@@ -86,8 +86,14 @@ app.post("/api/auth/jwt", async (req: any, res: any) => {
   }
 });
 
-app.get("/api/health", (_: any, res: any) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+app.get("/api/health", async (_: any, res: any) => {
+  try {
+    const db = getDb();
+    await db.command({ ping: 1 });
+    res.json({ status: "ok", database: "connected", timestamp: new Date().toISOString() });
+  } catch {
+    res.json({ status: "ok", database: "disconnected", timestamp: new Date().toISOString() });
+  }
 });
 
 // Routes
