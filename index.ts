@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { connectToDatabase } from "./lib/db";
 import { auth } from "./lib/auth";
 import { signJWT } from "./lib/jwt";
+import campaignRoutes from "./routes/campaigns";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -72,6 +73,9 @@ app.post("/api/auth/jwt", async (req: any, res: any) => {
 app.get("/api/health", (_: any, res: any) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+// Routes
+app.use("/api/campaigns", campaignRoutes);
 
 async function start() {
   await connectToDatabase();
