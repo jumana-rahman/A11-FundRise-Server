@@ -213,7 +213,7 @@ export async function remove(req: AuthRequest, res: Response) {
 
     for (const contrib of approvedContributions) {
       await db
-        .collection("users")
+        .collection("user")
         .updateOne(
           { email: contrib.supporterEmail },
           { $inc: { credits: contrib.contributionAmount } }

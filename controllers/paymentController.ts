@@ -105,7 +105,7 @@ export async function verifySession(req: AuthRequest, res: Response) {
     await db.collection(COLLECTION).insertOne(payment);
 
     // Add credits to user
-    await db.collection("users").updateOne(
+    await db.collection("user").updateOne(
       { email: userEmail },
       { $inc: { credits } }
     );
@@ -140,7 +140,7 @@ export async function create(req: AuthRequest, res: Response) {
     const result = await db.collection(COLLECTION).insertOne(payment);
 
     // Add credits to user
-    await db.collection("users").updateOne(
+    await db.collection("user").updateOne(
       { email: req.user!.email },
       { $inc: { credits: Number(credits) } }
     );

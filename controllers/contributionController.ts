@@ -39,13 +39,13 @@ export async function create(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: `Minimum contribution is ${campaign.minimumContribution} credits` });
     }
 
-    const user = await db.collection("users").findOne({ email: req.user!.email });
+    const user = await db.collection("user").findOne({ email: req.user!.email });
     if (!user || user.credits < amount) {
       return res.status(400).json({ error: "Insufficient credits" });
     }
 
     // Deduct credits from supporter
-    await db.collection("users").updateOne(
+    await db.collection("user").updateOne(
       { email: req.user!.email },
       { $inc: { credits: -amount } }
     );
@@ -217,7 +217,7 @@ export async function reject(req: AuthRequest, res: Response) {
     );
 
     // Refund credits to supporter
-    await db.collection("users").updateOne(
+    await db.collection("user").updateOne(
       { email: contribution.supporterEmail },
       { $inc: { credits: contribution.contributionAmount } }
     );

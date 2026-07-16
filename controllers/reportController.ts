@@ -89,7 +89,7 @@ export async function resolve(req: AuthRequest, res: Response) {
 
       for (const contrib of contributions) {
         await db
-          .collection("users")
+          .collection("user")
           .updateOne(
             { email: contrib.supporterEmail },
             { $inc: { credits: contrib.contributionAmount } }

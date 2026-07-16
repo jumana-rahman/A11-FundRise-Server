@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { getDb } from "../lib/db";
 import type { AuthRequest } from "../middleware/auth";
 
-const COLLECTION = "users";
+const COLLECTION = "user";
 
 // Get current user profile
 export async function getProfile(req: AuthRequest, res: Response) {

@@ -39,10 +39,72 @@ app.use((req: any, res: any, next: any) => {
   next();
 });
 
-// Better Auth handler — build a Web API Request for better-auth
+// JWT endpoint — MUST come before the catch-all handler
+app.post("/api/auth/jwt", async (req: any, res: any) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: req.headers,
+    });
+
+    if (!session?.user) {
+      return res.status(401).json({ error: "No active session" });
+    }
+
+    const token = await signJWT({
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      role: (session.user as any).role ?? "supporter",
+      credits: (session.user as any).credits ?? 0,
+      photoUrl: (session.user as any).photoUrl ?? "",
+    });
+
+    res.json({ token });
+  } catch (error) {
+    console.error("JWT generation error:", error);
+    res.status(500).json({ error: "Failed to generate token" });
+  }
+});
+
+// Grant registration credits — MUST come before the catch-all handler
+app.post("/api/auth/register-credits", async (req: any, res: any) => {
+  try {
+    const session = await auth.api.getSession({ headers: req.headers });
+    if (!session?.user) {
+      return res.status(401).json({ error: "No active session" });
+    }
+    const role = req.body.role ?? (session.user as any).role ?? "supporter";
+    await grantRegistrationCredits(session.user.email, role);
+    res.json({ message: "Credits granted" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to grant credits" });
+  }
+});
+
+app.get("/api/health", async (_: any, res: any) => {
+  try {
+    const db = getDb();
+    await db.command({ ping: 1 });
+    res.json({ status: "ok", database: "connected", timestamp: new Date().toISOString() });
+  } catch {
+    res.json({ status: "ok", database: "disconnected", timestamp: new Date().toISOString() });
+  }
+});
+
+// Routes
+app.use("/api/campaigns", campaignRoutes);
+app.use("/api/contributions", contributionRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/reports", reportRoutes);
+
+// Better Auth catch-all handler — MUST be LAST among /api/auth/* routes
+// Only forwards requests that better-auth knows about (sign-up, sign-in, sign-out, etc.)
 app.all("/api/auth/*", async (req: any, res: any) => {
   try {
-    const url = new URL(req.url!, `http://${req.headers.host}`);
+    const url = new URL(req.originalUrl!, `http://${req.headers.host}`);
 
     // Build a proper Web API Headers object from Express headers
     const headers = new Headers();
@@ -70,67 +132,6 @@ app.all("/api/auth/*", async (req: any, res: any) => {
   } catch (error) {
     console.error("Auth handler error:", error);
     res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// JWT endpoint — called by frontend after successful better-auth sign-in/sign-up
-app.post("/api/auth/jwt", async (req: any, res: any) => {
-  try {
-    const session = await auth.api.getSession({
-      headers: req.headers,
-    });
-
-    if (!session?.user) {
-      return res.status(401).json({ error: "No active session" });
-    }
-
-    const token = await signJWT({
-      id: session.user.id,
-      email: session.user.email,
-      name: session.user.name,
-      role: (session.user as any).role ?? "supporter",
-      credits: (session.user as any).credits ?? 0,
-      photoUrl: (session.user as any).photoUrl ?? "",
-    });
-
-    res.json({ token });
-  } catch (error) {
-    console.error("JWT generation error:", error);
-    res.status(500).json({ error: "Failed to generate token" });
-  }
-});
-
-app.get("/api/health", async (_: any, res: any) => {
-  try {
-    const db = getDb();
-    await db.command({ ping: 1 });
-    res.json({ status: "ok", database: "connected", timestamp: new Date().toISOString() });
-  } catch {
-    res.json({ status: "ok", database: "disconnected", timestamp: new Date().toISOString() });
-  }
-});
-
-// Routes
-app.use("/api/campaigns", campaignRoutes);
-app.use("/api/contributions", contributionRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/withdrawals", withdrawalRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/reports", reportRoutes);
-
-// Grant registration credits (called by frontend after sign-up)
-app.post("/api/auth/register-credits", async (req: any, res: any) => {
-  try {
-    const session = await auth.api.getSession({ headers: req.headers });
-    if (!session?.user) {
-      return res.status(401).json({ error: "No active session" });
-    }
-    const role = (session.user as any).role ?? req.body.role ?? "supporter";
-    await grantRegistrationCredits(session.user.email, role);
-    res.json({ message: "Credits granted" });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to grant credits" });
   }
 });
 

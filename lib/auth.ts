@@ -1,20 +1,13 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { admin, customSession } from "better-auth/plugins";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import { ac, supporter, creator, admin as adminRole } from "./permissions";
 
 const client = new MongoClient(process.env.MONGODB_URI!);
 
 export const auth = betterAuth({
-  database: mongodbAdapter(client.db(), {
-    collectionMapping: {
-      user: "users",
-      session: "sessions",
-      account: "accounts",
-      verification: "verifications",
-    },
-  }),
+  database: mongodbAdapter(client.db()),
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
@@ -38,7 +31,12 @@ export const auth = betterAuth({
     }),
     customSession(async ({ user, session }) => {
       const db = client.db();
-      const fullUser = await db.collection("users").findOne({ _id: user.id });
+      let fullUser;
+      try {
+        fullUser = await db.collection("user").findOne({ _id: new ObjectId(user.id) });
+      } catch {
+        fullUser = await db.collection("user").findOne({ email: user.email });
+      }
       return {
         user: {
           ...user,
@@ -54,7 +52,7 @@ export const auth = betterAuth({
     additionalFields: {
       credits: {
         type: "number",
-        required: true,
+        required: false,
         default: 0,
       },
       photoUrl: {
@@ -64,13 +62,13 @@ export const auth = betterAuth({
       },
       role: {
         type: "string",
-        required: true,
+        required: false,
         default: "supporter",
       },
     },
   },
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24, // 1 day
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
   },
 });

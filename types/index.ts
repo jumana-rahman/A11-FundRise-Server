@@ -6,8 +6,6 @@ export type ContributionStatus = "pending" | "approved" | "rejected";
 export type WithdrawalStatus = "pending" | "approved" | "rejected";
 
 export interface User {
-  _id?: ObjectId | string;
-  id?: string;
   name: string;
   email: string;
   photoUrl: string;
@@ -17,8 +15,6 @@ export interface User {
 }
 
 export interface Campaign {
-  _id?: ObjectId | string;
-  id?: string;
   campaignTitle: string;
   campaignStory: string;
   category: string;
@@ -35,8 +31,6 @@ export interface Campaign {
 }
 
 export interface Contribution {
-  _id?: ObjectId | string;
-  id?: string;
   campaignId: string;
   campaignTitle: string;
   contributionAmount: number;
@@ -49,8 +43,6 @@ export interface Contribution {
 }
 
 export interface Withdrawal {
-  _id?: ObjectId | string;
-  id?: string;
   creatorEmail: string;
   creatorName: string;
   withdrawalCredit: number;
@@ -62,8 +54,6 @@ export interface Withdrawal {
 }
 
 export interface Notification {
-  _id?: ObjectId | string;
-  id?: string;
   message: string;
   toEmail: string;
   actionRoute: string;
@@ -72,8 +62,6 @@ export interface Notification {
 }
 
 export interface Report {
-  _id?: ObjectId | string;
-  id?: string;
   campaignId: string;
   campaignTitle: string;
   reporterName: string;
@@ -84,8 +72,6 @@ export interface Report {
 }
 
 export interface Payment {
-  _id?: ObjectId | string;
-  id?: string;
   userEmail: string;
   userName: string;
   credits: number;
