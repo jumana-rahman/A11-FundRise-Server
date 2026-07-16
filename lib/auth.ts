@@ -16,7 +16,7 @@ export function getAuth() {
 
   _auth = betterAuth({
     trustedOrigins: [CLIENT_URL],
-    database: mongodbAdapter(client.db()),
+    database: mongodbAdapter(client.db("fundrise")),
     emailAndPassword: {
       enabled: true,
       autoSignIn: true,

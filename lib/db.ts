@@ -5,6 +5,8 @@ import { MongoClient, type Db } from "mongodb";
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 
+const DB_NAME = process.env.DB_NAME || "fundrise";
+
 let client: MongoClient;
 let db: Db;
 
@@ -13,9 +15,9 @@ export async function connectToDatabase(): Promise<Db> {
 
   client = new MongoClient(MONGODB_URI);
   await client.connect();
-  db = client.db();
+  db = client.db(DB_NAME);
 
-  console.log("Connected to MongoDB");
+  console.log("Connected to MongoDB fundrise");
   return db;
 }
 
