@@ -4,7 +4,7 @@
 
 ## Admin Credentials
 - **Email:** admin@fundrise.com
-- **Password:** Admin@123
+- **Password:** Admin@1234!
 
 ## Features
 
