@@ -2,8 +2,7 @@
   "name": "fundrise-server",
   "version": "1.0.0",
   "description": "FundRise crowdfunding platform backend",
-  "type": "module",
-  "main": "dist/index.js",
+  "main": "api/index.ts",
   "scripts": {
     "build": "tsc",
     "dev": "npx tsx watch index.ts",
