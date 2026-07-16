@@ -142,4 +142,21 @@ async function start() {
   });
 }
 
-start().catch(console.error);
+// Vercel serverless: export the app, connect DB on first request
+let dbConnected = false;
+async function ensureDb() {
+  if (!dbConnected) {
+    await connectToDatabase();
+    dbConnected = true;
+  }
+}
+
+export default async function handler(req: any, res: any) {
+  await ensureDb();
+  return app(req, res);
+}
+
+// Local development: run directly
+if (!process.env.VERCEL) {
+  start().catch(console.error);
+}
