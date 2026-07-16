@@ -1,7 +1,7 @@
+import dns from "node:dns";
 import { MongoClient, type Db } from "mongodb";
 
 try {
-  const dns = require("node:dns/promises");
   dns.setServers(["8.8.8.8", "8.8.4.4"]);
 } catch {}
 
