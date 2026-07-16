@@ -56,7 +56,7 @@ app.post("/api/auth/jwt", async (req: any, res: any) => {
       name: session.user.name,
       role: (session.user as any).role ?? "supporter",
       credits: (session.user as any).credits ?? 0,
-      photoUrl: (session.user as any).photoUrl ?? "",
+      photoUrl: (session.user as any).photoUrl || (session.user as any).image || "",
     });
 
     res.json({ token });

@@ -50,7 +50,7 @@ export function getAuth() {
           user: {
             ...user,
             credits: fullUser?.credits ?? 0,
-            photoUrl: fullUser?.photoUrl ?? "",
+            photoUrl: fullUser?.photoUrl || fullUser?.image || (user as any).image || "",
             role: fullUser?.role ?? "supporter",
           },
           session,
