@@ -1,3 +1,6 @@
+import dns from "node:dns";
+try { dns.setServers(["8.8.8.8", "8.8.4.4"]); } catch {}
+
 import express, { type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -137,6 +140,11 @@ const app = express();
 app.use(cors({ origin: CLIENT_URL, credentials: true }) as any);
 app.use(express.json());
 app.use(cookieParser());
+
+// Root
+app.get("/", (_: any, res: any) => {
+  res.json({ name: "FundRise API", status: "running" });
+});
 
 // Health
 app.get("/api/health", async (_: any, res: any) => {
@@ -445,6 +453,11 @@ app.all("/api/auth/*", async (req: any, res: any) => {
 let connected = false;
 
 export default async function handler(req: any, res: any) {
-  if (!connected) { await connectToDatabase(); connected = true; }
-  return app(req, res);
+  try {
+    if (!connected) { await connectToDatabase(); connected = true; }
+    return app(req, res);
+  } catch (err: any) {
+    console.error("Handler error:", err);
+    res.status(500).json({ error: "Internal server error", message: err.message });
+  }
 }
