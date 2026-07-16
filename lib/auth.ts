@@ -6,7 +6,10 @@ import { ac, supporter, creator, admin as adminRole } from "./permissions";
 
 const client = new MongoClient(process.env.MONGODB_URI!);
 
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+
 export const auth = betterAuth({
+  trustedOrigins: [CLIENT_URL],
   database: mongodbAdapter(client.db()),
   emailAndPassword: {
     enabled: true,
