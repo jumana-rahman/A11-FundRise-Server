@@ -13,5 +13,5 @@
     "resolveJsonModule": true,
     "declaration": true
   },
-  "include": ["index.ts", "lib/**/*", "middleware/**/*", "controllers/**/*", "routes/**/*", "types/**/*"]
+  "include": ["index.ts", "api/**/*", "lib/**/*", "middleware/**/*", "controllers/**/*", "routes/**/*", "types/**/*"]
 }

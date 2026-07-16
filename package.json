@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "npx tsx watch index.ts",
-    "start": "node index.js"
+    "start": "npx tsx index.ts"
   },
   "dependencies": {
     "better-auth": "^1.2.0",

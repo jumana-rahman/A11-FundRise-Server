@@ -1,7 +1,9 @@
-import dns from "node:dns/promises";
-dns.setServers(["8.8.8.8", "8.8.4.4"]);
-
 import { MongoClient, type Db } from "mongodb";
+
+try {
+  const { setServers } = await import("node:dns/promises");
+  setServers(["8.8.8.8", "8.8.4.4"]);
+} catch {}
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 

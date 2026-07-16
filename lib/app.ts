@@ -1,0 +1,120 @@
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { getDb } from "./db";
+import { auth } from "./auth";
+import { signJWT } from "./jwt";
+import campaignRoutes from "../routes/campaigns";
+import contributionRoutes from "../routes/contributions";
+import userRoutes from "../routes/users";
+import withdrawalRoutes from "../routes/withdrawals";
+import paymentRoutes from "../routes/payments";
+import notificationRoutes from "../routes/notifications";
+import reportRoutes from "../routes/reports";
+import { grantRegistrationCredits } from "../controllers/userController";
+
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+
+const app = express();
+
+app.use(cors({
+  origin: CLIENT_URL,
+  credentials: true,
+}) as any);
+app.use(express.json());
+app.use(cookieParser());
+
+app.use((req: any, res: any, next: any) => {
+  const start = Date.now();
+  const originalEnd = res.end;
+  res.end = function (this: any, ...args: any[]) {
+    const duration = Date.now() - start;
+    if (req.url?.startsWith("/api")) {
+      console.log(`${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+    }
+    return originalEnd.apply(this, args);
+  };
+  next();
+});
+
+app.post("/api/auth/jwt", async (req: any, res: any) => {
+  try {
+    const session = await auth.api.getSession({ headers: req.headers });
+    if (!session?.user) {
+      return res.status(401).json({ error: "No active session" });
+    }
+    const token = await signJWT({
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      role: (session.user as any).role ?? "supporter",
+      credits: (session.user as any).credits ?? 0,
+      photoUrl: (session.user as any).photoUrl || (session.user as any).image || "",
+    });
+    res.json({ token });
+  } catch (error) {
+    console.error("JWT generation error:", error);
+    res.status(500).json({ error: "Failed to generate token" });
+  }
+});
+
+app.post("/api/auth/register-credits", async (req: any, res: any) => {
+  try {
+    const session = await auth.api.getSession({ headers: req.headers });
+    if (!session?.user) {
+      return res.status(401).json({ error: "No active session" });
+    }
+    const role = req.body.role ?? (session.user as any).role ?? "supporter";
+    await grantRegistrationCredits(session.user.email, role);
+    res.json({ message: "Credits granted" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to grant credits" });
+  }
+});
+
+app.get("/api/health", async (_: any, res: any) => {
+  try {
+    const db = getDb();
+    await db.command({ ping: 1 });
+    res.json({ status: "ok", database: "connected", timestamp: new Date().toISOString() });
+  } catch {
+    res.json({ status: "ok", database: "disconnected", timestamp: new Date().toISOString() });
+  }
+});
+
+app.use("/api/campaigns", campaignRoutes);
+app.use("/api/contributions", contributionRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/reports", reportRoutes);
+
+app.all("/api/auth/*", async (req: any, res: any) => {
+  try {
+    const url = new URL(req.originalUrl!, `http://${req.headers.host}`);
+    const headers = new Headers();
+    for (const [key, value] of Object.entries(req.headers)) {
+      if (value !== undefined) {
+        headers.set(key, Array.isArray(value) ? value.join(", ") : String(value));
+      }
+    }
+    const webRequest = new Request(url.toString(), {
+      method: req.method,
+      headers,
+      body: ["GET", "HEAD"].includes(req.method) ? undefined : JSON.stringify(req.body),
+    });
+    const response = await auth.handler(webRequest);
+    res.status(response.status);
+    response.headers.forEach((value: string, key: string) => {
+      res.setHeader(key, value);
+    });
+    const body = await response.text();
+    res.send(body);
+  } catch (error) {
+    console.error("Auth handler error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+export default app;
