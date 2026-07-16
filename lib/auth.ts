@@ -80,7 +80,7 @@ export function getAuth() {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
     },
-  });
+  } as any);
 
   return _auth;
 }
@@ -88,7 +88,7 @@ export function getAuth() {
 /** Lazy proxy so existing `auth.api.getSession(...)` calls work without changes */
 export const auth = new Proxy({} as ReturnType<typeof betterAuth>, {
   get(_target, prop, receiver) {
-    const instance = getAuth();
+    const instance = getAuth() as any;
     const value = Reflect.get(instance, prop, receiver);
     if (typeof value === "function") {
       return value.bind(instance);

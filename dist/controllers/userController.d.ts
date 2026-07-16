@@ -1,0 +1,11 @@
+import { type Response } from "express";
+import type { AuthRequest } from "../middleware/auth";
+export declare function getProfile(req: AuthRequest, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function updateProfile(req: AuthRequest, res: Response): Promise<void>;
+export declare function getCredits(req: AuthRequest, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function addCredits(req: AuthRequest, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function listAll(req: AuthRequest, res: Response): Promise<void>;
+export declare function getStats(req: AuthRequest, res: Response): Promise<void>;
+export declare function updateRole(req: AuthRequest, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function remove(req: AuthRequest, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function grantRegistrationCredits(email: string, role: string): Promise<void>;

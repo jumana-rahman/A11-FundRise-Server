@@ -1,0 +1,131 @@
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { connectToDatabase, getDb } from "./lib/db";
+import { auth } from "./lib/auth";
+import { signJWT } from "./lib/jwt";
+import campaignRoutes from "./routes/campaigns";
+import contributionRoutes from "./routes/contributions";
+import userRoutes from "./routes/users";
+import withdrawalRoutes from "./routes/withdrawals";
+import paymentRoutes from "./routes/payments";
+import notificationRoutes from "./routes/notifications";
+import reportRoutes from "./routes/reports";
+import { grantRegistrationCredits } from "./controllers/userController";
+const app = express();
+const PORT = process.env.PORT || 5000;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+app.use(cors({
+    origin: CLIENT_URL,
+    credentials: true,
+}));
+app.use(express.json());
+app.use(cookieParser());
+// Request logger middleware
+app.use((req, res, next) => {
+    const start = Date.now();
+    const originalEnd = res.end;
+    res.end = function (...args) {
+        const duration = Date.now() - start;
+        if (req.url?.startsWith("/api")) {
+            console.log(`${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+        }
+        return originalEnd.apply(this, args);
+    };
+    next();
+});
+// JWT endpoint — MUST come before the catch-all handler
+app.post("/api/auth/jwt", async (req, res) => {
+    try {
+        const session = await auth.api.getSession({
+            headers: req.headers,
+        });
+        if (!session?.user) {
+            return res.status(401).json({ error: "No active session" });
+        }
+        const token = await signJWT({
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+            role: session.user.role ?? "supporter",
+            credits: session.user.credits ?? 0,
+            photoUrl: session.user.photoUrl || session.user.image || "",
+        });
+        res.json({ token });
+    }
+    catch (error) {
+        console.error("JWT generation error:", error);
+        res.status(500).json({ error: "Failed to generate token" });
+    }
+});
+// Grant registration credits — MUST come before the catch-all handler
+app.post("/api/auth/register-credits", async (req, res) => {
+    try {
+        const session = await auth.api.getSession({ headers: req.headers });
+        if (!session?.user) {
+            return res.status(401).json({ error: "No active session" });
+        }
+        const role = req.body.role ?? session.user.role ?? "supporter";
+        await grantRegistrationCredits(session.user.email, role);
+        res.json({ message: "Credits granted" });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Failed to grant credits" });
+    }
+});
+app.get("/api/health", async (_, res) => {
+    try {
+        const db = getDb();
+        await db.command({ ping: 1 });
+        res.json({ status: "ok", database: "connected", timestamp: new Date().toISOString() });
+    }
+    catch {
+        res.json({ status: "ok", database: "disconnected", timestamp: new Date().toISOString() });
+    }
+});
+// Routes
+app.use("/api/campaigns", campaignRoutes);
+app.use("/api/contributions", contributionRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/reports", reportRoutes);
+// Better Auth catch-all handler — MUST be LAST among /api/auth/* routes
+// Only forwards requests that better-auth knows about (sign-up, sign-in, sign-out, etc.)
+app.all("/api/auth/*", async (req, res) => {
+    try {
+        const url = new URL(req.originalUrl, `http://${req.headers.host}`);
+        // Build a proper Web API Headers object from Express headers
+        const headers = new Headers();
+        for (const [key, value] of Object.entries(req.headers)) {
+            if (value !== undefined) {
+                headers.set(key, Array.isArray(value) ? value.join(", ") : String(value));
+            }
+        }
+        const webRequest = new Request(url.toString(), {
+            method: req.method,
+            headers,
+            body: ["GET", "HEAD"].includes(req.method) ? undefined : JSON.stringify(req.body),
+        });
+        const response = await auth.handler(webRequest);
+        res.status(response.status);
+        response.headers.forEach((value, key) => {
+            res.setHeader(key, value);
+        });
+        const body = await response.text();
+        res.send(body);
+    }
+    catch (error) {
+        console.error("Auth handler error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+async function start() {
+    await connectToDatabase();
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
+}
+start().catch(console.error);
